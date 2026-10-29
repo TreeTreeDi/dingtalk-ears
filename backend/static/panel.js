@@ -372,5 +372,30 @@ document.getElementById('todo-form').onsubmit = async (event) => {
     submit.removeAttribute('aria-busy');
   }
 };
+// Theme: the head script applies the saved choice before first paint; this wires the swatches.
+const THEME_KEY = 'dte-panel-theme';
+function markTheme(name) {
+  for (const pick of document.querySelectorAll('[data-theme-pick]'))
+    pick.setAttribute('aria-pressed', String(pick.dataset.themePick === name));
+}
+function setTheme(name) {
+  const root = document.documentElement;
+  if (root.dataset.theme === name) return;
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    root.classList.add('theme-shift');
+    clearTimeout(setTheme.timer);
+    setTheme.timer = setTimeout(() => root.classList.remove('theme-shift'), 400);
+  }
+  root.dataset.theme = name;
+  markTheme(name);
+  try {
+    localStorage.setItem(THEME_KEY, name);
+  } catch {
+    // Storage blocked: the theme still applies for this visit.
+  }
+}
+for (const pick of document.querySelectorAll('[data-theme-pick]'))
+  pick.onclick = () => setTheme(pick.dataset.themePick);
+markTheme(document.documentElement.dataset.theme || 'kargul');
 refresh();
 setInterval(refresh, 1500);

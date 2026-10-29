@@ -1,19 +1,34 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="kargul">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="color-scheme" content="light" />
     <title>钉钉消息助手</title>
+    <script nonce="__TOKEN__">
+      try {
+        var t = localStorage.getItem('dte-panel-theme');
+        if (/^(kargul|dark|paper|mono|lilac)$/.test(t)) document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
     <link rel="stylesheet" href="/panel.css" />
   </head>
   <body>
     <div class="app">
       <header class="bar">
         <div class="brand">消息助手</div>
-        <div id="status" class="status" data-state="starting" role="status">
-          <span class="dot" aria-hidden="true"></span><span id="listening">连接中</span
-          ><span class="sep" aria-hidden="true">·</span>Codex <span id="agent">连接中</span>
+        <div class="bar-end">
+          <div id="status" class="status" data-state="starting" role="status">
+            <span class="dot" aria-hidden="true"></span><span id="listening">连接中</span
+            ><span class="sep" aria-hidden="true">·</span>Codex <span id="agent">连接中</span>
+          </div>
+          <div id="themes" class="themes" role="group" aria-label="主题">
+            <button type="button" data-theme-pick="kargul" aria-label="浅色" title="浅色"></button
+            ><button type="button" data-theme-pick="dark" aria-label="深色" title="深色"></button
+            ><button type="button" data-theme-pick="paper" aria-label="纸本" title="纸本"></button
+            ><button type="button" data-theme-pick="mono" aria-label="等宽" title="等宽"></button
+            ><button type="button" data-theme-pick="lilac" aria-label="淡紫" title="淡紫"></button>
+          </div>
         </div>
       </header>
       <main class="list">
