@@ -1,0 +1,14 @@
+README.md
+  h_8e80b2b4b22af3 70-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "e9cdeb9aabe04f3e5310173b163e2cb056c39cc7",
+  "prompts": {},
+  "humans": {
+    "h_8e80b2b4b22af3": {
+      "author": "Bell"
+    }
+  }
+}
