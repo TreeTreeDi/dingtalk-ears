@@ -8,23 +8,52 @@
     <link rel="stylesheet" href="/panel.css" />
   </head>
   <body>
-    <header class="bar">
-      <div class="brand">消息助手</div>
-      <nav id="tabs" class="segmented" aria-label="消息来源">
-        <button data-filter="all" class="active" aria-pressed="true">全部</button
-        ><button data-filter="direct" aria-pressed="false">单聊</button
-        ><button data-filter="at" aria-pressed="false">@我</button
-        ><button data-filter="ued" aria-pressed="false">关注群</button>
-      </nav>
-      <div id="status" class="status" data-state="starting" role="status">
-        <span class="dot" aria-hidden="true"></span><span id="listening">连接中</span
-        ><span class="sep" aria-hidden="true">·</span>Codex <span id="agent">连接中</span>
-      </div>
-    </header>
-    <div class="layout">
+    <div class="app">
+      <header class="bar">
+        <div class="brand">消息助手</div>
+        <div id="status" class="status" data-state="starting" role="status">
+          <span class="dot" aria-hidden="true"></span><span id="listening">连接中</span
+          ><span class="sep" aria-hidden="true">·</span>Codex <span id="agent">连接中</span>
+        </div>
+      </header>
+      <main class="list">
+        <div class="list-head">
+          <h1>待处理</h1>
+          <span class="count" data-n="0"><span id="pending">0</span> 待审</span>
+          <nav id="tabs" class="segmented" aria-label="消息来源">
+            <button data-filter="all" class="active" aria-pressed="true">全部</button
+            ><button data-filter="direct" aria-pressed="false">单聊</button
+            ><button data-filter="at" aria-pressed="false">@我</button
+            ><button data-filter="ued" aria-pressed="false">关注群</button>
+          </nav>
+        </div>
+        <div id="error" role="alert" hidden></div>
+        <div id="messages">
+          <div class="skeleton" aria-hidden="true">
+            <article>
+              <span class="sk-time"></span>
+              <div>
+                <span class="sk-line short"></span><span class="sk-line"></span
+                ><span class="sk-block"></span>
+              </div>
+            </article>
+            <article>
+              <span class="sk-time"></span>
+              <div>
+                <span class="sk-line short"></span><span class="sk-line"></span
+                ><span class="sk-block"></span>
+              </div>
+            </article>
+            <article>
+              <span class="sk-time"></span>
+              <div><span class="sk-line short"></span><span class="sk-line mid"></span></div>
+            </article>
+          </div>
+        </div>
+      </main>
       <aside class="rail">
-        <section class="card overview">
-          <div class="card-head">
+        <section class="section overview">
+          <div class="section-head">
             <h2>总结</h2>
             <button
               id="refresh-overview"
@@ -51,37 +80,36 @@
           </div>
           <p id="overview-note" class="meta-line"></p>
         </section>
-        <section class="card todos">
-          <div class="card-head">
-            <h2>待办</h2>
-            <span id="todo-count" class="count">0</span>
+        <section class="section todos">
+          <div class="section-head">
+            <h2>待办 <span id="todo-count" class="count">0</span></h2>
           </div>
           <div id="todo-list"></div>
         </section>
-        <footer class="foot">
-          <p id="listener-note" class="meta-line"></p>
-          <p class="meta-line" id="updated">正在读取消息…</p>
-        </footer>
+        <section class="section foot">
+          <div class="section-head"><h2>实时接收</h2></div>
+          <dl id="listener-note" class="kv">
+            <div>
+              <dt>单聊</dt>
+              <dd><span class="sk-line tiny"></span></dd>
+            </div>
+            <div>
+              <dt>@我</dt>
+              <dd><span class="sk-line tiny"></span></dd>
+            </div>
+            <div>
+              <dt>关注群</dt>
+              <dd><span class="sk-line tiny"></span></dd>
+            </div>
+          </dl>
+          <dl class="kv">
+            <div>
+              <dt>更新</dt>
+              <dd id="updated">读取中</dd>
+            </div>
+          </dl>
+        </section>
       </aside>
-      <main class="list">
-        <div class="list-head">
-          <h1>待处理</h1>
-          <span class="count"><span id="pending">0</span> 待审</span>
-        </div>
-        <div id="error" role="alert" hidden></div>
-        <div id="messages">
-          <div class="skeleton" aria-hidden="true">
-            <article>
-              <span class="sk-line short"></span><span class="sk-line"></span
-              ><span class="sk-block"></span>
-            </article>
-            <article>
-              <span class="sk-line short"></span><span class="sk-line"></span
-              ><span class="sk-block"></span>
-            </article>
-          </div>
-        </div>
-      </main>
     </div>
     <dialog id="todo-dialog" aria-labelledby="todo-dialog-title">
       <form id="todo-form">

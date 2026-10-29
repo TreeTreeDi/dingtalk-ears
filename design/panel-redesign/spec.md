@@ -1,23 +1,21 @@
-# 面板重构 spec
+# Panel v2 spec (Kargul style)
 
-Scope: `backend/static/{index.html,panel.css,panel.js}` only. Endpoints, payloads and data handling unchanged.
+**Shell.** Gray page #EFEFEF, one white app panel (12px radius, 1px #DBDBDB hairline, max 1280px). Sticky top bar: brand left, status pill right (gray pulsing dot while starting, teal tint when live, peach when degraded). Below: main list + fixed 320px right rail split by a hairline; the rail is sticky and scrolls on its own.
 
-## Layout
-- Top bar (sticky, hairline bottom): brand left · segmented source filter centered (全部 / 单聊 / @我 / group) · status right (`● 3 路 · Codex 已连接`, dot teal when all listeners ready, orange when degraded or summary paused).
-- ≥961px: two columns inside 1120px — message list (hero) | 320px sticky rail (总结 card, 待办 card, meta lines).
-- ≤960px: one column; ≤640px (menu-bar ~400px): bar wraps to brand+status / full-width segments; order is 总结 → 待处理 → 待办 → meta.
+**Type.** Geist (installed font; CSP blocks shipping files) → -apple-system / PingFang SC / Noto Sans CJK. Weights 500 body, 700 headings. Scale 24 (h1, -0.48 tracking) / 18 (h2) / 14 body / 13 / 12 meta. Times use Geist Mono.
 
-## Message card
-sender (600) · source in muted text · time `MM-DD HH:mm` right (full value in tooltip) → original (15/24 ink) → Codex summary (13/20 muted) → draft textarea (fill bg, accent border + 3px ring on focus) → actions row: ghost text buttons left (重新生成 / 添加待办 / 标记已处理), accent pill right (确认发送). Non-pending draft states are one dot+text line (sending teal, unknown brown/orange, stale gray).
+**Color.** Ink #232323, body #707070, muted #9D9D9D (separators, placeholders, disabled), done #A3A3A3. Teal #0A7A6E only for live. Brown #874C2A + peach #FFE7D2 only for needs-Shane.
 
-## Tokens
-Neutral grays #f2f2f2 / #fff / #f6f6f6 / #e6e6e6 / #e4e4e4 / #232323 / #4a4a4a / #707070 / #9d9d9d; accent #0a7a6e; warm #c75b1c / #874c2a / #fff1e6. Type 12/13/14/15/20, 4px spacing grid (4–32), radius 6/8/12/pill. System font stack (PingFang SC). Body weight 400 for CJK readability, 600 for headings and the primary button.
+**List head.** h1 待处理, inline count "N 待审" (brown when N>0), segmented control right-aligned on the title baseline (active = dark pill). At ≤640px the control goes full width under the title.
 
-## Motion
-New cards: opacity + translateY(4px), 260ms `cubic-bezier(0.23,1,0.32,1)`, once per key. Button press scale(0.97) 140ms. Dialog: opacity + scale(0.97) 200ms; backdrop fade. Color changes 200ms ease. `prefers-reduced-motion`: all durations → 1ms, no press scale.
+**Rows.** Two-column grid: 88px mono time axis + content (max 720). Name 700 + sources as inline text joined by ' · '. Rows that need Shane get an orange dot hanging left of the name, so names stay aligned. Codex output sits in a tinted 12px block: summary, white textarea, state label, actions. Ghost actions align with the summary text; the single dark pill (确认发送 / 生成草稿) sits right.
 
-## States
-Loading: card-shaped skeleton (list + summary). Empty: dashed card `没有待处理消息`. Error / degraded: peach strip above the list; skeleton hidden and pulsing stops on error. Buttons: hover (fill / darker accent), active (scale), focus-visible (2px accent outline, offset 2), disabled (40% or gray fill for primary), busy (`aria-busy` spinner, label hidden).
+**States.** Draft labels: none = dashed dot, sending = teal pulse, unknown = brown, stale = gray. Buttons: ghost hover = #F2F2F2 fill, active = scale 0.97, focus-visible = 2px ink outline offset 2, disabled = 40% opacity (primary: gray fill), busy = aria-busy opacity pulse. Empty = one quiet line in the content column. Error = peach strip under the title; skeleton freezes.
 
-## Copy removed
-Eyebrow, h1 subtitle, sidebar tagline + footer note, 4 stat-card labels, section notes, todo helper lines, 「消息整理」「待你审查」「已发送 · 投递成功」 labels. The listener caveat moved to the tooltip of the receive-count line.
+**Rail.** 总结 (refresh icon button, summary, meta line), 待办 (inline count, rows; done = gray + green check, unknown = brown, creating = teal), 实时接收 (two-column key-value: 单聊 / @我 / groups → "N 条", 更新 → HH:MM:SS mono; listener caveat in tooltip).
+
+**Archive.** "已处理 N" disclosure with rotating chevron; handled rows in gray.
+
+**Motion.** 300ms cubic-bezier(0.76,0,0.24,1) on color/opacity/transform only; row enter fade+4px rise; dialog scale 0.97→1. prefers-reduced-motion: 1ms, no press scale.
+
+**Responsive.** ≤900px: single column, order bar / 总结 / list / 待办 / 实时接收. ≤640px: 16px padding, time moves right of the name.
