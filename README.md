@@ -67,3 +67,8 @@ python3 -m backend share --output ../dingtalk-ears-share.tar.gz
 ```
 
 分享包按白名单收录源码和通用文档，排除个人配置、凭据、数据库、日志、摘要和截图。不要直接分享整个工作目录。
+
+## 例图
+![样图1](image.png)
+![增加钉钉待办](image-1.png)
+![消息回复](image-3.png)
