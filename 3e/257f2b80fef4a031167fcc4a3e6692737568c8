@@ -1,0 +1,31 @@
+backend/hooks.py
+  s_9b5fcd72919684::t_1ead3199a54072 1-310
+backend/host.py
+  s_6c7b34334730e4::t_41c7d503fdc1c5 14,48-50,83,85,94-95,150
+backend/web.py
+  s_6c7b34334730e4::t_fd11c17442a39e 4,9,12,14,16-17,19-20,78-79,91-120,122-131,135,137-141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3e257f2b80fef4a031167fcc4a3e6692737568c8",
+  "prompts": {},
+  "sessions": {
+    "s_6c7b34334730e4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a186e4-9137-73c0-be7c-3e585f8deb1a",
+        "model": "unknown"
+      },
+      "human_author": "huaiju <huaiju1210085279@gmail.com>"
+    },
+    "s_9b5fcd72919684": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a186cd-c97d-7131-8a55-2f68024b84e9",
+        "model": "unknown"
+      },
+      "human_author": "huaiju <huaiju1210085279@gmail.com>"
+    }
+  }
+}
