@@ -1,0 +1,3 @@
+# Developer tools run on Python >=3.8, separately from the Python >=3.7 runtime.
+black==24.8.0
+ruff==0.9.10
