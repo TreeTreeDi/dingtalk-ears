@@ -1,0 +1,25 @@
+config.example.json
+  284e173bc5d13650 1-26
+backend/queue_store.py
+  284e173bc5d13650 1-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "2ffb4bcf3fcd8b6da11e474f6ef9ece5d579d7d2",
+  "prompts": {
+    "284e173bc5d13650": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1858e-7091-70f0-9eef-41f8b21efe38",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Bell",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 568,
+      "overriden_lines": 0
+    }
+  }
+}
