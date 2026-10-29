@@ -1,0 +1,100 @@
+"""Configuration failures must happen before any external service is started."""
+
+import importlib
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+
+class ConfigTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name).resolve()
+        try:
+            self.module = importlib.import_module("backend.config")
+        except ImportError:
+            self.module = None
+        self.assertIsNotNone(self.module, "configuration module is not implemented")
+        self.path = self.root / "config.local.json"
+        self.value = {
+            "profile": "corp:employee",
+            "self_id": "open-person",
+            "display_name": "同事",
+            "group": {"id": "cid-example", "name": "设计群"},
+        }
+
+    def load(self):
+        self.path.write_text(json.dumps(self.value), encoding="utf-8")
+        return self.module.load_config(self.path)
+
+    def test_relative_paths_follow_config_location_not_working_directory(self):
+        config = self.load()
+        self.assertEqual(config.state_dir, self.root / "data")
+        self.assertEqual(config.output_dir, self.root / "data/output")
+        self.assertEqual(config.port, 8766)
+
+    def test_missing_identity_placeholder_and_unknown_fields_are_rejected(self):
+        for change in [
+            {"profile": ""},
+            {"self_id": "填写本人ID"},
+            {"token": "secret"},
+            {"server": {"port": 8766, "host": "0.0.0.0"}},
+        ]:
+            with self.subTest(change=change):
+                self.value.update(change)
+                with self.assertRaises(ValueError):
+                    self.load()
+                self.value = {
+                    "profile": "corp:employee",
+                    "self_id": "open-person",
+                    "display_name": "同事",
+                    "group": {"id": "cid-example", "name": "设计群"},
+                }
+
+    def test_invalid_numbers_and_repeated_json_keys_are_rejected(self):
+        for port in [True, 0, 65536, "8766"]:
+            self.value["server"] = {"port": port}
+            with self.assertRaises(ValueError):
+                self.load()
+        self.value.pop("server")
+        self.value["batch"] = {"trigger_count": 20, "max_messages": 10}
+        with self.assertRaises(ValueError):
+            self.load()
+        self.path.write_text('{"profile":"a:b","profile":"x:y"}', encoding="utf-8")
+        with self.assertRaises(ValueError):
+            self.module.load_config(self.path)
+
+    def test_command_paths_follow_config_but_bare_commands_use_path(self):
+        self.value["commands"] = {"dws": "./bin/dws", "codex": "codex"}
+        config = self.load()
+        self.assertEqual(config.dws, str(self.root / "bin/dws"))
+        self.assertEqual(config.codex, "codex")
+
+    def test_state_cannot_be_reused_by_another_account(self):
+        first = self.load()
+        self.module.bind_state(first)
+        self.value["profile"] = "another:employee"
+        with self.assertRaises(ValueError):
+            self.module.bind_state(self.load())
+
+    def test_legacy_databases_require_explicit_adoption(self):
+        config = self.load()
+        config.state_dir.mkdir()
+        (config.state_dir / "queue.db").touch()
+        with self.assertRaises(ValueError):
+            self.module.bind_state(config)
+        self.module.bind_state(config, adopt=True)
+        self.module.bind_state(config)
+
+    def test_config_example_is_created_once_without_overwriting(self):
+        self.module.initialize(self.path)
+        with self.assertRaises(FileExistsError):
+            self.module.initialize(self.path)
+        with self.assertRaises(ValueError):
+            self.module.load_config(self.path)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,26 @@
+{
+  "profile": "填写corpId:userId",
+  "self_id": "填写本人openDingTalkId",
+  "display_name": "我的名字",
+  "group": {
+    "id": "填写群openConversationId",
+    "name": "关注群"
+  },
+  "server": {
+    "port": 8766
+  },
+  "paths": {
+    "state_dir": "./data",
+    "output_dir": "./data/output"
+  },
+  "commands": {
+    "dws": "dws",
+    "codex": "codex"
+  },
+  "batch": {
+    "direct_seconds": 30,
+    "group_seconds": 300,
+    "trigger_count": 20,
+    "max_messages": 50
+  }
+}
