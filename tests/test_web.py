@@ -1,0 +1,119 @@
+"""Exercise actual loopback requests with a non-default port and synthetic data."""
+
+import http.client
+import json
+import re
+import tempfile
+import time
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from backend.panel_store import PanelStore
+from backend.web import start_panel
+
+
+class WebTests(unittest.TestCase):
+    def test_candidate_and_manual_todos_share_confirmation_and_duplicate_protection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = PanelStore(
+                Path(directory) / "panel.db",
+                SimpleNamespace(port=8766, dws="unused", profile="test"),
+            )
+            message = {
+                "key": "test:m1",
+                "conversation_id": "test",
+                "text": "请确认方案",
+                "sources": ["direct"],
+            }
+            store.receive(message)
+            store.add_candidates(
+                [{"message_key": message["key"], "title": "确认方案", "evidence": "确认方案"}],
+                [message["key"]],
+            )
+            candidate = store.snapshot()[0]["todos"][0]
+            server = start_panel(store, lambda: {}, lambda key: None, port=0)
+            connection = http.client.HTTPConnection("127.0.0.1", server.server_address[1])
+            try:
+                connection.request("GET", "/")
+                page = connection.getresponse().read().decode()
+                token = re.search('nonce="([^"]+)"', page).group(1)
+                headers = {
+                    "Origin": "http://127.0.0.1:" + str(server.server_address[1]),
+                    "X-Panel-Token": token,
+                    "Content-Type": "application/json",
+                }
+                receipt = SimpleNamespace(
+                    returncode=0,
+                    stdout=json.dumps(
+                        {"ok": True, "data": {"verified": True, "taskId": "fixture"}}
+                    ),
+                )
+                with patch("backend.dingtalk.subprocess.run", return_value=receipt):
+                    for endpoint, body in [
+                        ("todo", {"id": candidate["id"], "title": "确认方案"}),
+                        ("todo-manual", {"key": message["key"], "title": "  手动跟进  "}),
+                    ]:
+                        for expected in [202, 409]:
+                            connection.request(
+                                "POST", "/api/" + endpoint, json.dumps(body), headers
+                            )
+                            response = connection.getresponse()
+                            response.read()
+                            self.assertEqual(response.status, expected)
+                    deadline = time.monotonic() + 3
+                    while time.monotonic() < deadline:
+                        tasks = store.snapshot()[0]["todos"]
+                        if all(task["status"] == "created" for task in tasks):
+                            break
+                        time.sleep(0.01)
+                    self.assertEqual({task["title"] for task in tasks}, {"确认方案", "手动跟进"})
+                    self.assertEqual(len(tasks), 2)
+                    self.assertTrue(all(task["status"] == "created" for task in tasks))
+            finally:
+                connection.close()
+                server.shutdown()
+                server.server_close()
+
+    def test_external_css_and_script_work_with_origin_protection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = PanelStore(Path(directory) / "panel.db", SimpleNamespace(port=8766))
+            # Binding port zero is useful for isolated instances; start_panel must use
+            # the actual assigned port in Host and Origin checks.
+            server = start_panel(store, lambda: {"group_name": "设计组"}, lambda key: None, port=0)
+            port = server.server_address[1]
+            try:
+                connection = http.client.HTTPConnection("127.0.0.1", port)
+                connection.request("GET", "/")
+                response = connection.getresponse()
+                page = response.read().decode()
+                self.assertEqual(response.status, 200)
+                self.assertIn("/panel.css", page)
+                token = re.search('nonce="([^"]+)"', page).group(1)
+                for resource, kind in [
+                    ("/panel.css", "text/css"),
+                    ("/panel.js", "text/javascript"),
+                ]:
+                    connection.request("GET", resource)
+                    response = connection.getresponse()
+                    self.assertEqual(response.status, 200)
+                    self.assertIn(kind, response.getheader("Content-Type"))
+                    self.assertNotIn("__TOKEN__", response.read().decode())
+                connection.request(
+                    "POST",
+                    "/api/overview",
+                    body="{}",
+                    headers={
+                        "Origin": "http://127.0.0.1:" + str(port),
+                        "X-Panel-Token": token,
+                        "Content-Type": "application/json",
+                    },
+                )
+                response = connection.getresponse()
+                self.assertEqual(response.status, 202)
+                response.read()
+                connection.close()
+            finally:
+                server.shutdown()
+                server.server_close()

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>钉钉消息助手</title>
+    <link rel="stylesheet" href="/panel.css" />
+  </head>
+  <body>
+    <aside>
+      <div class="brand">消息助手<span class="brand-dot"> ·</span></div>
+      <div class="hint">把找你的事，放在一起。</div>
+      <nav id="tabs">
+        <button data-filter="all" class="active">全部消息</button
+        ><button data-filter="direct">谁找我</button><button data-filter="at">谁 @我</button
+        ><button data-filter="ued">关注群</button>
+      </nav>
+      <div class="bottom hint">只关注消息，不接入 OA 审批。<br />回复由你确认后发送。</div>
+    </aside>
+    <main>
+      <header>
+        <div class="eyebrow">YOUR INBOX, WITH CONTEXT</div>
+        <h1>值得你留意的消息</h1>
+        <p>新消息会自动出现。先看原文和建议，修改后再确认发送。</p>
+      </header>
+      <div class="stats">
+        <div class="stat"><span>消息监听</span><strong id="listening">连接中</strong></div>
+        <div class="stat"><span>Codex</span><strong id="agent">连接中</strong></div>
+        <div class="stat"><span>待审草稿</span><strong id="pending">0</strong></div>
+        <div class="stat"><span>待办建议</span><strong id="todo-count">0</strong></div>
+      </div>
+      <p id="listener-note" class="small"></p>
+      <div id="error" hidden></div>
+      <div class="overview-grid">
+        <section class="overview-box">
+          <div class="section-title">
+            <h2>AI 总结</h2>
+            <button id="refresh-overview">重新总结</button>
+          </div>
+          <div id="overview-text" class="summary">正在读取总结…</div>
+          <p id="overview-note" class="small"></p>
+        </section>
+        <section class="overview-box">
+          <div class="section-title"><h2>发现的待办</h2></div>
+          <div id="todo-list"></div>
+          <p class="small">确认后添加到我的钉钉待办，不自动设置截止时间。</p>
+        </section>
+      </div>
+      <div class="section-title"><h2>待处理消息</h2></div>
+      <p class="section-note">长连接实时接收单聊、@我和关注群消息；AI 按批次整理。</p>
+      <div id="messages"></div>
+      <div class="footer" id="updated">正在读取消息…</div>
+    </main>
+    <dialog id="todo-dialog">
+      <form id="todo-form">
+        <h2>添加到我的钉钉待办</h2>
+        <label for="todo-title">待办标题</label
+        ><input id="todo-title" name="title" maxlength="200" required autocomplete="off" />
+        <p class="small">确认后创建到你自己的钉钉待办，不设置截止时间。</p>
+        <p id="todo-dialog-error" class="dialog-error"></p>
+        <div class="actions">
+          <button type="button" id="todo-cancel">取消</button
+          ><button type="submit" id="todo-submit" class="primary">确认添加</button>
+        </div>
+      </form>
+    </dialog>
+    <script nonce="__TOKEN__" src="/panel.js"></script>
+  </body>
+</html>

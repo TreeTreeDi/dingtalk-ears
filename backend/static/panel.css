@@ -1,0 +1,462 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  color: #22332f;
+  background: #f5f6f3;
+  font-size: 15px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid #d4ded7;
+  border-radius: 9px;
+  padding: 9px 14px;
+  background: white;
+  color: #344a41;
+}
+
+button:hover {
+  background: #edf4ef;
+}
+
+button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+aside {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 220px;
+  background: #eaf0e9;
+  border-right: 1px solid #dce4d9;
+  padding: 34px 23px;
+}
+
+.brand {
+  font-size: 22px;
+  letter-spacing: -1px;
+  font-weight: 700;
+  margin-bottom: 9px;
+}
+
+.hint {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #687b6e;
+}
+
+nav {
+  display: grid;
+  gap: 9px;
+  margin-top: 38px;
+}
+
+nav button {
+  text-align: left;
+  border-color: transparent;
+  background: transparent;
+}
+
+nav button.active {
+  background: #d4e2d2;
+  color: #214b37;
+  font-weight: 650;
+}
+
+.bottom {
+  position: absolute;
+  bottom: 30px;
+  left: 24px;
+  right: 20px;
+}
+
+main {
+  margin-left: 220px;
+  max-width: 1120px;
+  padding: 38px 45px;
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #7a8d7e;
+}
+
+h1 {
+  font-size: 30px;
+  margin: 11px 0;
+  color: #253b2e;
+  font-weight: 650;
+}
+
+header p {
+  color: #718077;
+  line-height: 1.7;
+  margin: 8px 0 24px;
+}
+
+.stats {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  padding: 16px 20px;
+  background: #fff;
+  border: 1px solid #e0e7dd;
+  border-radius: 12px;
+  min-width: 145px;
+}
+
+.stat strong {
+  display: block;
+  font-size: 23px;
+  margin-top: 6px;
+}
+
+.stat span {
+  color: #7b897e;
+  font-size: 12px;
+}
+
+#error {
+  color: #904b34;
+  background: #fff0e4;
+  border-radius: 9px;
+  padding: 12px;
+  margin-bottom: 20px;
+  white-space: pre-wrap;
+}
+
+article {
+  background: white;
+  border: 1px solid #dfe5dc;
+  border-radius: 14px;
+  margin-bottom: 22px;
+  padding: 23px 26px;
+  box-shadow: 0 2px 4px #263a2510;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.name {
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.tag {
+  font-size: 11px;
+  border-radius: 6px;
+  background: #edf2e9;
+  color: #52714c;
+  padding: 4px 7px;
+}
+
+.time {
+  margin-left: auto;
+  font-size: 12px;
+  color: #8a958c;
+}
+
+.original {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+  border-left: 3px solid #cfdcc9;
+  padding: 8px 15px;
+  margin-top: 19px;
+  max-height: 230px;
+  overflow: auto;
+}
+
+.label {
+  font-size: 12px;
+  color: #71836e;
+  display: block;
+  margin: 20px 0 8px;
+}
+
+.summary {
+  white-space: pre-wrap;
+  line-height: 1.7;
+  color: #495d4c;
+  overflow-wrap: anywhere;
+}
+
+.drafthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.status {
+  font-size: 12px;
+  color: #7e897b;
+}
+
+textarea {
+  display: block;
+  resize: vertical;
+  min-height: 86px;
+  width: 100%;
+  line-height: 1.7;
+  padding: 12px 14px;
+  border: 1px solid #d6e0d1;
+  background: #fafcf8;
+  border-radius: 9px;
+  color: #324331;
+  outline: none;
+}
+
+textarea:focus {
+  border-color: #7c9b77;
+  box-shadow: 0 0 0 3px #e8f0e4;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 13px;
+  flex-wrap: wrap;
+}
+
+.primary {
+  background: #355a40;
+  color: white;
+  border-color: #355a40;
+}
+
+.primary:hover {
+  background: #294832;
+}
+
+.empty {
+  padding: 65px 20px;
+  text-align: center;
+  color: #83917f;
+  border: 1px dashed #cfd9c9;
+  border-radius: 14px;
+}
+
+.receipt {
+  font-size: 12px;
+  color: #71836e;
+  margin-top: 10px;
+}
+
+.footer {
+  font-size: 12px;
+  color: #82907f;
+  margin-top: 25px;
+  line-height: 1.7;
+}
+
+@media (width <=700px) {
+  aside {
+    position: static;
+    width: 100%;
+    padding: 20px;
+  }
+
+  nav {
+    display: flex;
+    margin-top: 18px;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .bottom {
+    display: none;
+  }
+
+  main {
+    margin: 0;
+    padding: 25px 16px;
+  }
+
+  article {
+    padding: 20px;
+  }
+
+  .time {
+    margin-left: 0;
+  }
+
+  .stats {
+    gap: 8px;
+  }
+
+  .stat {
+    min-width: 110px;
+    flex: 1;
+    padding: 12px;
+  }
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 18px;
+  margin: 0 0 28px;
+}
+
+.overview-box {
+  background: #fff;
+  border: 1px solid #dce5d6;
+  border-radius: 14px;
+  padding: 22px;
+  min-width: 0;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 17px;
+}
+
+.section-title h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.small {
+  font-size: 12px;
+  color: #7d8a79;
+  line-height: 1.7;
+}
+
+.todo-item {
+  border-top: 1px solid #e9eee5;
+  padding: 13px 0;
+}
+
+.todo-name {
+  font-weight: 550;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.evidence {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #82907d;
+  margin: 5px 0;
+  overflow-wrap: anywhere;
+}
+
+.todo-action {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.todo-state {
+  font-size: 12px;
+  color: #70826a;
+  padding: 8px 0;
+}
+
+.archive {
+  margin-top: 32px;
+  border-top: 1px solid #dce4d5;
+  padding-top: 21px;
+}
+
+.archive > summary {
+  cursor: pointer;
+  color: #7b8875;
+  font-size: 14px;
+  padding: 8px 0 20px;
+}
+
+.archive article {
+  background: #f9faf7;
+  box-shadow: none;
+}
+
+.sent {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  color: #70806a;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #edf2e9;
+}
+
+.section-note {
+  font-size: 12px;
+  color: #85917f;
+  margin: -8px 0 20px;
+}
+
+@media (width <=850px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+dialog {
+  border: 1px solid #d8e2d2;
+  border-radius: 15px;
+  padding: 28px;
+  width: min(460px, 92vw);
+  color: #30492f;
+  box-shadow: 0 20px 80px #19351b33;
+}
+
+dialog::backdrop {
+  background: #20331f55;
+}
+
+dialog h2 {
+  font-size: 21px;
+  margin: 0 0 20px;
+}
+
+dialog label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+dialog input {
+  font: inherit;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #c8d6c1;
+  border-radius: 8px;
+}
+
+dialog .dialog-error {
+  color: #9b4935;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.brand-dot {
+  color: #72916a;
+}
