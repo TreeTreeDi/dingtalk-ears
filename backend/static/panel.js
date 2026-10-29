@@ -87,7 +87,12 @@ function renderTodos(active) {
     return;
   }
   for (const { task, message } of todos) {
-    const item = el('div', undefined, 'todo-item');
+    const item = el(
+      'div',
+      undefined,
+      'todo-item ' +
+        ({ created: 'done', unknown: 'unknown', creating: 'creating' }[task.status] || ''),
+    );
     item.append(
       el('div', task.title, 'todo-name'),
       el('div', message.sender + ' · ' + task.evidence, 'evidence'),
@@ -101,12 +106,22 @@ function renderTodos(active) {
   }
 }
 function messageCard(message) {
-  const card = el('article', undefined, seen.has(message.key) ? '' : 'enter'),
-    meta = el('div', undefined, 'meta');
+  const draft = message.draft;
+  const needs =
+    !message.handled &&
+    draft &&
+    ((draft.status === 'pending' && draft.text.trim()) || draft.status === 'unknown');
+  const card = el(
+      'article',
+      undefined,
+      (seen.has(message.key) ? '' : 'enter') + (needs ? ' needs' : ''),
+    ),
+    meta = el('div', undefined, 'meta'),
+    who = el('div', undefined, 'who');
   seen.add(message.key);
-  meta.append(el('span', message.sender, 'name'));
+  who.append(el('span', message.sender, 'name'));
   for (const source of message.sources)
-    meta.append(
+    who.append(
       el(
         'span',
         { direct: '单聊', at: '@我', ued: snapshot.status.group_name || '关注群' }[source] ||
@@ -114,7 +129,7 @@ function messageCard(message) {
         'tag',
       ),
     );
-  if (message.ingest_mode === 'history_backfill') meta.append(el('span', '历史补读', 'tag'));
+  if (message.ingest_mode === 'history_backfill') who.append(el('span', '历史补读', 'tag'));
   const time = el(
     'time',
     String(message.time || '时间未提供').replace(
@@ -124,19 +139,23 @@ function messageCard(message) {
     'time',
   );
   time.title = String(message.time || '');
-  meta.append(time);
+  meta.append(time, who);
   card.append(meta, el('div', clean(message.text), 'original'));
-  const draft = message.draft;
-  if (draft) card.append(el('div', draft.summary || '手动回复', 'summary'));
+  const codex = el('div', undefined, 'codex');
+  if (draft) codex.append(el('div', draft.summary || '手动回复', 'summary'));
   if (message.handled) {
-    if (draft && draft.status === 'delivered') card.append(el('div', draft.text, 'sent'));
-    else card.append(el('div', '已处理', 'label'));
+    if (draft && draft.status === 'delivered') codex.append(el('div', draft.text, 'sent'));
+    else codex.append(el('div', '已处理', 'label'));
+    card.append(codex);
     return card;
   }
+  card.append(codex);
   const actions = el('div', undefined, 'actions');
   if (draft) {
     if (draft.status !== 'pending')
-      card.append(el('div', statuses[draft.status] || draft.status, 'label state-' + draft.status));
+      codex.append(
+        el('div', statuses[draft.status] || draft.status, 'label state-' + draft.status),
+      );
     if (draft.status === 'pending') {
       const field = el('textarea');
       field.setAttribute('aria-label', '给' + message.sender + '的回复草稿');
@@ -156,15 +175,15 @@ function messageCard(message) {
         edits.set(draft.id, field.value);
         send.disabled = !field.value.trim();
       };
-      card.append(field);
+      codex.append(field);
       actions.append(send);
     }
     if (draft.status !== 'sending')
       actions.append(button('重新生成', () => action('regenerate', { key: message.key })));
     if (draft.receipt)
-      card.append(el('div', draft.receipt.error || '请在钉钉核对投递结果。', 'receipt'));
+      codex.append(el('div', draft.receipt.error || '请在钉钉核对投递结果。', 'receipt'));
   } else {
-    card.append(el('div', '等待整理', 'label'));
+    codex.append(el('div', '等待整理', 'label state-none'));
     actions.append(
       button('手动回复', () => action('manual', { key: message.key })),
       button('生成草稿', () => action('regenerate', { key: message.key }), 'primary'),
@@ -175,7 +194,7 @@ function messageCard(message) {
       button('添加待办', () => manualTodo(message)),
       button('标记已处理', () => action('handled', { key: message.key })),
     );
-  card.append(actions);
+  codex.append(actions);
   return card;
 }
 function render() {
@@ -207,15 +226,17 @@ function render() {
     Object.entries(status.listeners || {}).map(([key, value]) => [key, value.accepted || 0]),
   );
   const note = document.getElementById('listener-note');
-  note.textContent =
-    '实时接收 单聊 ' +
-    (counts.direct || 0) +
-    ' · @我 ' +
-    (counts.at || 0) +
-    ' · ' +
-    (status.group_name || '关注群') +
-    ' ' +
-    (counts.ued || 0);
+  note.replaceChildren(
+    ...[
+      ['单聊', counts.direct],
+      ['@我', counts.at],
+      [status.group_name || '关注群', counts.ued],
+    ].map(([key, value]) => {
+      const row = el('div');
+      row.append(el('dt', key), el('dd', (value || 0) + ' 条'));
+      return row;
+    }),
+  );
   note.title = '历史补读不计入实时接收；订阅就绪不代表已验证群事件投递。';
   document.getElementById('agent').textContent =
     status.summary_state === 'generating'
@@ -225,9 +246,11 @@ function render() {
         : status.appserver === 'ready'
           ? '已连接'
           : '连接中';
-  document.getElementById('pending').textContent = active.filter(
+  const pendingCount = active.filter(
     (message) => message.draft && message.draft.status === 'pending' && message.draft.text.trim(),
   ).length;
+  document.getElementById('pending').textContent = pendingCount;
+  document.getElementById('pending').parentElement.dataset.n = pendingCount;
   error(
     status.error ||
       (degraded ? '消息连接已降级，请检查监听日志；订阅就绪不代表正在正常接收。' : null),
@@ -262,12 +285,21 @@ function render() {
     section.ontoggle = () => {
       showHandled = section.open;
     };
-    section.append(el('summary', '已处理 ' + handled.length));
+    const summary = el('summary', '已处理');
+    summary.append(el('span', String(handled.length), 'count'));
+    section.append(summary);
     for (const message of handled) section.append(messageCard(message));
     root.append(section);
   }
-  document.getElementById('updated').textContent =
-    '更新于 ' + (status.updated || '刚刚') + ' · 最近 100 条';
+  updated(status);
+}
+function updated(status) {
+  const node = document.getElementById('updated');
+  node.textContent = String(status.updated || '刚刚').replace(
+    /^\d{4}-\d{2}-\d{2} (\d{2}:\d{2}:\d{2}).*$/,
+    '$1',
+  );
+  node.title = (status.updated || '') + ' · 最近 100 条';
 }
 async function refresh() {
   if (loading) return;
@@ -290,9 +322,7 @@ async function refresh() {
       if (active && active.tagName === 'TEXTAREA') return;
       last = signature;
       render();
-    } else
-      document.getElementById('updated').textContent =
-        '更新于 ' + (next.status.updated || '刚刚') + ' · 最近 100 条';
+    } else updated(next.status);
   } catch (e) {
     error(e.message);
   } finally {
