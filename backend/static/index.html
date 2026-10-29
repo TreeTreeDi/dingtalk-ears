@@ -3,108 +3,103 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light" />
     <title>钉钉消息助手</title>
-    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="/panel.css" />
   </head>
   <body>
-    <aside>
-      <div class="brand-row">
-        <div class="brand">消息助手<span class="brand-dot"> ·</span></div>
-        <a
-          href="https://github.com/shiqiWang0/dingtalk-ears"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="github-link"
-          title="GitHub 仓库"
-          aria-label="GitHub 仓库"
-        >
-          <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor">
-            <path
-              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
-            ></path>
-          </svg>
-        </a>
-      </div>
-      <div class="hint">把找你的事，放在一起。</div>
-      <nav id="tabs">
-        <button data-filter="all" class="active">全部消息</button
-        ><button data-filter="direct">谁找我</button><button data-filter="at">谁 @我</button
-        ><button data-filter="groups">关注群</button>
+    <header class="bar">
+      <div class="brand">消息助手</div>
+      <nav id="tabs" class="segmented" aria-label="消息来源">
+        <button data-filter="all" class="active" aria-pressed="true">全部</button
+        ><button data-filter="direct" aria-pressed="false">单聊</button
+        ><button data-filter="at" aria-pressed="false">@我</button
+        ><button data-filter="ued" aria-pressed="false">关注群</button>
       </nav>
-      <div class="bottom hint">只关注消息，不接入 OA 审批。<br />回复由你确认后发送。</div>
-    </aside>
-    <main>
-      <header>
-        <div class="eyebrow">YOUR INBOX, WITH CONTEXT</div>
-        <h1>值得你留意的消息</h1>
-        <p>新消息会自动出现。先看原文和建议，修改后再确认发送。</p>
-      </header>
-      <div class="stats">
-        <div class="stat"><span>消息监听</span><strong id="listening">连接中</strong></div>
-        <div class="stat"><span id="agent-label">AI 助手</span><strong id="agent">连接中</strong></div>
-        <div class="stat"><span>待审草稿</span><strong id="pending">0</strong></div>
-        <div class="stat"><span>待办建议</span><strong id="todo-count">0</strong></div>
+      <div id="status" class="status" data-state="starting" role="status">
+        <span class="dot" aria-hidden="true"></span><span id="listening">连接中</span
+        ><span class="sep" aria-hidden="true">·</span>Codex <span id="agent">连接中</span>
       </div>
-      <p id="listener-note" class="small"></p>
-      <div id="error" hidden></div>
-      <section class="group-manager">
-        <div class="section-title"><h2>关注群</h2><button id="add-group">添加关注群</button></div>
-        <div id="group-list"></div>
-        <p class="small">添加或删除会保存到本机配置；重启服务后开始或停止监听。</p>
-      </section>
-      <div class="overview-grid">
-        <section class="overview-box">
-          <div class="section-title">
-            <h2>AI 总结</h2>
-            <button id="refresh-overview">重新总结</button>
+    </header>
+    <div class="layout">
+      <aside class="rail">
+        <section class="card overview">
+          <div class="card-head">
+            <h2>总结</h2>
+            <button
+              id="refresh-overview"
+              class="icon"
+              type="button"
+              aria-label="重新总结"
+              title="重新总结"
+            >
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                <path
+                  d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
           </div>
-          <div id="overview-text" class="summary">正在读取总结…</div>
-          <p id="overview-note" class="small"></p>
+          <div id="overview-text" class="overview-text">
+            <span class="sk-line"></span><span class="sk-line"></span
+            ><span class="sk-line short"></span>
+          </div>
+          <p id="overview-note" class="meta-line"></p>
         </section>
-        <section class="overview-box">
-          <div class="section-title"><h2>发现的待办</h2></div>
+        <section class="card todos">
+          <div class="card-head">
+            <h2>待办</h2>
+            <span id="todo-count" class="count">0</span>
+          </div>
           <div id="todo-list"></div>
-          <p class="small">确认后添加到我的钉钉待办，不自动设置截止时间。</p>
         </section>
-      </div>
-      <div class="section-title"><h2>待处理消息</h2></div>
-      <p class="section-note">长连接实时接收单聊、@我和关注群消息；AI 按批次整理。</p>
-      <div id="messages"></div>
-      <div class="footer" id="updated">正在读取消息…</div>
-    </main>
-    <dialog id="todo-dialog">
+        <footer class="foot">
+          <p id="listener-note" class="meta-line"></p>
+          <p class="meta-line" id="updated">正在读取消息…</p>
+        </footer>
+      </aside>
+      <main class="list">
+        <div class="list-head">
+          <h1>待处理</h1>
+          <span class="count"><span id="pending">0</span> 待审</span>
+        </div>
+        <div id="error" role="alert" hidden></div>
+        <div id="messages">
+          <div class="skeleton" aria-hidden="true">
+            <article>
+              <span class="sk-line short"></span><span class="sk-line"></span
+              ><span class="sk-block"></span>
+            </article>
+            <article>
+              <span class="sk-line short"></span><span class="sk-line"></span
+              ><span class="sk-block"></span>
+            </article>
+          </div>
+        </div>
+      </main>
+    </div>
+    <dialog id="todo-dialog" aria-labelledby="todo-dialog-title">
       <form id="todo-form">
-        <h2>添加到我的钉钉待办</h2>
-        <label for="todo-title">待办标题</label
-        ><input id="todo-title" name="title" maxlength="200" required autocomplete="off" />
-        <p class="small">确认后创建到你自己的钉钉待办，不设置截止时间。</p>
-        <p id="todo-dialog-error" class="dialog-error"></p>
+        <h2 id="todo-dialog-title">添加到钉钉待办</h2>
+        <label for="todo-title" class="visually-hidden">待办标题</label
+        ><input
+          id="todo-title"
+          name="title"
+          maxlength="200"
+          required
+          autocomplete="off"
+          placeholder="待办标题"
+        />
+        <p id="todo-dialog-error" class="dialog-error" role="alert"></p>
         <div class="actions">
           <button type="button" id="todo-cancel">取消</button
-          ><button type="submit" id="todo-submit" class="primary">确认添加</button>
+          ><button type="submit" id="todo-submit" class="primary">添加</button>
         </div>
-      </form>
-    </dialog>
-    <dialog id="group-dialog">
-      <form id="group-form">
-        <h2>添加关注群</h2>
-        <label for="group-search">选择群</label>
-        <div class="group-combobox">
-          <div id="group-selection" class="group-selection"></div>
-          <input
-            id="group-search"
-            autocomplete="off"
-            role="combobox"
-            aria-autocomplete="list"
-            aria-controls="group-options"
-            aria-expanded="false"
-            placeholder="输入群名称搜索"
-          />
-          <ul id="group-options" class="group-options" role="listbox" hidden></ul>
-        </div>
-        <p id="group-dialog-error" class="dialog-error"></p>
-        <div class="actions"><button type="button" id="group-cancel">取消</button><button type="submit" class="primary">保存关注群</button></div>
       </form>
     </dialog>
     <script nonce="__TOKEN__" src="/panel.js"></script>
