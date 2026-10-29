@@ -1,6 +1,6 @@
 # 钉钉消息助手
 
-把单聊、@我和一个指定群的新消息汇集到本地面板，由 Codex 生成摘要、回复草稿和待办建议。**回复和待办需本人确认后执行，不操作 OA 审批。**
+把单聊、@我和一个指定群的新消息汇集到本地面板，由 Codex 生成摘要、回复草稿和待办建议。**回复和待办需本人确认后执行**
 
 Python 标准库 + 原生网页，无第三方 Python 运行依赖，无需构建前端。支持 macOS/Linux；macOS 可安装登录启动项。
 
@@ -69,6 +69,6 @@ python3 -m backend share --output ../dingtalk-ears-share.tar.gz
 分享包按白名单收录源码和通用文档，排除个人配置、凭据、数据库、日志、摘要和截图。不要直接分享整个工作目录。
 
 ## 例图
-![样图1](image.png)
-![增加钉钉待办](image-1.png)
-![消息回复](image-3.png)
+![样图1](./docs/images/app-overview.png)
+![增加钉钉待办](./docs/images/dingtalk-todo.png)
+![消息回复](./docs/images/message-reply.png)

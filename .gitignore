@@ -12,6 +12,9 @@ __pycache__/
 *.db-shm
 *.log
 *.png
+!docs/images/app-overview.png
+!docs/images/dingtalk-todo.png
+!docs/images/message-reply.png
 *.tar.gz
 build/
 dist/
