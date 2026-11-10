@@ -1,0 +1,45 @@
+backend/host.py
+  h_05f32768e190e9 16,52-54,98,100,109-110,173
+docs/安装配置与启动.md
+  h_05f32768e190e9 128
+backend/static/panel.js
+  h_05f32768e190e9 576-663
+backend/config.py
+  h_05f32768e190e9 3,12-14,27,51,167
+tests/test_hooks.py
+  h_05f32768e190e9 1-329
+README.md
+  h_05f32768e190e9 53-54
+backend/distribution.py
+  h_05f32768e190e9 27
+backend/panel_store.py
+  h_05f32768e190e9 6,266-293
+config.example.json
+  h_05f32768e190e9 28-38
+backend/static/index.html
+  h_05f32768e190e9 35,111-157
+tests/test_host_hooks.py
+  h_05f32768e190e9 1-128
+docs/架构说明.md
+  h_05f32768e190e9 137
+backend/static/panel.css
+  h_05f32768e190e9 746-788
+backend/web.py
+  h_05f32768e190e9 4,9,12,14,16-27,29-30,100-101,116-145,147-156,160,162-166
+docs/外部Hooks.md
+  h_05f32768e190e9 1-90
+backend/hooks.py
+  h_05f32768e190e9 1-305
+  h_05f32768e190e9 306-310
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c0e91ba246a87e204a687dadb0fd043e4462c8a2",
+  "prompts": {},
+  "humans": {
+    "h_05f32768e190e9": {
+      "author": "huaiju <huaiju1210085279@gmail.com>"
+    }
+  }
+}
