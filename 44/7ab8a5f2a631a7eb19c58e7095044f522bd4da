@@ -1,0 +1,20 @@
+backend/hooks.py
+  h_05f32768e190e9 146-150,311
+  h_05f32768e190e9 155-156,304-305,308-310
+tests/test_hooks.py
+  h_05f32768e190e9 163-173
+  h_05f32768e190e9 21,113,174
+docs/外部Hooks.md
+  h_05f32768e190e9 27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "447ab8a5f2a631a7eb19c58e7095044f522bd4da",
+  "prompts": {},
+  "humans": {
+    "h_05f32768e190e9": {
+      "author": "huaiju <huaiju1210085279@gmail.com>"
+    }
+  }
+}
