@@ -552,12 +552,20 @@ h2 .count {
   transform: scale(var(--press));
 }
 
+/* Floating error: overlays the list so the layout never jumps; same peach as needs-Shane. */
 #error {
-  margin: 0 var(--space-6) var(--space-4);
+  position: fixed;
+  top: calc(var(--bar-h) + var(--space-4));
+  left: 50%;
+  z-index: 3;
+  width: min(var(--row-max), calc(100vw - 2 * var(--space-4)));
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-sm);
   background: var(--warn-tint);
   color: var(--warn-ink);
+  box-shadow: var(--shadow-overlay);
+  transform: translateX(-50%);
+  white-space: pre-wrap;
 }
 
 #error[hidden] {
@@ -669,6 +677,12 @@ textarea {
   transition: border-color var(--dur) var(--ease);
 }
 
+textarea:disabled {
+  color: var(--muted);
+  background: var(--tint);
+  cursor: not-allowed;
+}
+
 textarea::placeholder,
 input::placeholder {
   color: var(--muted);
@@ -714,6 +728,10 @@ input:focus-visible {
 
 .label.state-sending::before {
   background: var(--accent);
+  animation: pulse var(--dur-pulse) var(--ease) infinite;
+}
+
+.label.state-generating::before {
   animation: pulse var(--dur-pulse) var(--ease) infinite;
 }
 
@@ -1036,6 +1054,11 @@ h2 {
   grid-row: 1 / span 2;
 }
 
+.todo-action {
+  display: flex;
+  gap: var(--space-1);
+}
+
 .todo-state {
   display: flex;
   align-items: center;
@@ -1064,6 +1087,38 @@ h2 {
 
 .todo-item.creating .todo-state {
   color: var(--accent);
+}
+
+/* Watched groups: same row rhythm as todos; name over a muted id. */
+.github-link {
+  margin-right: 0;
+}
+
+.group-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) 0;
+  border-top: var(--hairline) solid var(--row-line);
+}
+
+.group-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.group-name {
+  overflow-wrap: anywhere;
+}
+
+.group-id {
+  grid-column: 1;
+  font-family: var(--mono);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  color: var(--body);
+  overflow-wrap: anywhere;
 }
 
 .kv > div {
@@ -1153,6 +1208,10 @@ dialog {
   box-shadow: var(--shadow-overlay);
 }
 
+dialog:has(.group-combobox) {
+  overflow: visible;
+}
+
 dialog[open] {
   animation: dialog-in var(--dur) var(--ease) both;
 }
@@ -1175,6 +1234,126 @@ dialog input {
   border-radius: var(--radius-sm);
   background: var(--surface);
   transition: border-color var(--dur) var(--ease);
+}
+
+/* Group picker: input with selected-group chips; options drop below inside the dialog. */
+.group-combobox {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--input-h);
+  padding: var(--space-1) var(--space-2);
+  border: var(--hairline) solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  transition: border-color var(--dur) var(--ease);
+}
+
+.group-combobox:hover {
+  border-color: var(--muted);
+}
+
+.group-combobox:focus-within {
+  border-color: var(--focus);
+}
+
+dialog .group-combobox input {
+  flex: 1;
+  width: auto;
+  min-width: 120px;
+  height: var(--control-h);
+  padding: 0 var(--space-1);
+  border: 0;
+  background: transparent;
+}
+
+dialog .group-combobox input:focus-visible {
+  outline: none;
+}
+
+.group-options {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  left: 0;
+  max-height: 300px;
+  margin: 0;
+  padding: var(--space-1);
+  overflow-y: auto;
+  list-style: none;
+  background: var(--surface);
+  border: var(--dialog-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-overlay);
+}
+
+.group-options[hidden] {
+  display: none;
+}
+
+.group-option,
+.group-option-empty {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  line-height: var(--lh);
+}
+
+.group-option {
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.group-option:hover {
+  background: var(--hover);
+}
+
+.group-option[aria-selected='true'] {
+  background: var(--tint);
+  font-weight: var(--w-head);
+}
+
+.group-option-empty {
+  color: var(--muted);
+}
+
+.group-selection {
+  display: contents;
+}
+
+.group-selection-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  height: 24px;
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--tint);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+.group-selection-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--body);
+  font-size: var(--text);
+  line-height: 1;
+}
+
+.group-selection-remove:hover {
+  color: var(--ink);
+  background: var(--hover);
 }
 
 .dialog-error {
@@ -1234,12 +1413,13 @@ dialog .actions .primary {
 
   .app {
     min-height: 100dvh;
-    grid-template: auto auto auto auto auto / minmax(0, 1fr);
+    grid-template: auto auto auto auto auto auto / minmax(0, 1fr);
     grid-template-areas:
       'bar'
       'overview'
       'list'
       'todos'
+      'groups'
       'foot';
     border: 0;
     border-radius: 0;
@@ -1256,6 +1436,10 @@ dialog .actions .primary {
   .todos {
     grid-area: todos;
     border-top: var(--hairline) solid var(--line);
+  }
+
+  .groups {
+    grid-area: groups;
   }
 
   .foot {
@@ -1284,11 +1468,6 @@ dialog .actions .primary {
   .archive summary {
     padding-left: var(--space-4);
     padding-right: var(--space-4);
-  }
-
-  #error {
-    margin-left: var(--space-4);
-    margin-right: var(--space-4);
   }
 
   .segmented {

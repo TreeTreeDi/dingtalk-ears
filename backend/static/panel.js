@@ -6,6 +6,7 @@ let filter = 'all',
   last = '';
 const edits = new Map();
 const seen = new Set();
+const generatingMessages = new Map();
 const statuses = {
   pending: '待你审查',
   sending: '正在发送，请勿重复操作',
@@ -26,10 +27,24 @@ function el(tag, text, cls) {
   if (cls) node.className = cls;
   return node;
 }
+// 将网络底层异常转换为更准确的中文提示并保留原始报错
+function humanizeError(text) {
+  if (!text) return '';
+  const str = String(text);
+  // 判断是否为服务停止或网络中断导致的请求失败
+  if (
+    str.includes('Failed to fetch') ||
+    str.includes('Load failed') ||
+    str.includes('NetworkError')
+  ) {
+    return '无法连接本地服务，后台进程可能已停止（' + str + '）';
+  }
+  return str;
+}
 function error(text) {
   const box = document.getElementById('error');
   box.hidden = !text;
-  box.textContent = text || '';
+  box.textContent = humanizeError(text);
 }
 async function action(path, data) {
   const response = await fetch('/api/' + path, {
@@ -51,16 +66,108 @@ function button(label, fn, cls) {
     } catch (e) {
       error(e.message);
     } finally {
-      node.disabled = false;
-      node.removeAttribute('aria-busy');
+      // 避免覆写外部正在 loading 中的禁用状态
+      if (!node.classList.contains('loading')) {
+        node.disabled = false;
+        node.removeAttribute('aria-busy');
+      }
     }
   };
+  return node;
+}
+// 触发重新生成草稿，并记录消息 key 用于 loading 与禁用交互
+async function regenerateMessage(message) {
+  if (generatingMessages.has(message.key)) return;
+  // 记录重新生成发起时的旧草稿 id 和时间戳
+  generatingMessages.set(message.key, {
+    draftId: message.draft ? message.draft.id : null,
+    startTime: Date.now(),
+  });
+  if (message.draft) {
+    edits.delete(message.draft.id);
+  }
+  render();
+  try {
+    await action('regenerate', { key: message.key });
+  } catch (e) {
+    generatingMessages.delete(message.key);
+    render();
+    throw e;
+  }
+}
+// 检查正在重新生成的消息是否已生成新草稿或异常结束
+function checkGeneratingStatus(next) {
+  if (!generatingMessages.size) return;
+  const now = Date.now();
+  // 检查是否发生全局 AI 服务错误或异常退出
+  const isGlobalError =
+    next.status.summary_state === 'paused_after_error' || Boolean(next.status.error);
+
+  for (const [key, info] of Array.from(generatingMessages.entries())) {
+    // 遇到全局错误或超过两分钟超时时解除生成中状态
+    if (isGlobalError || now - info.startTime > 120000) {
+      generatingMessages.delete(key);
+      continue;
+    }
+    const msg = next.messages.find((m) => m.key === key);
+    // 消息已被处理或不存在时清理状态
+    if (!msg || msg.handled) {
+      generatingMessages.delete(key);
+      continue;
+    }
+    // 原先无草稿且现在已生成草稿
+    if (!info.draftId && msg.draft) {
+      generatingMessages.delete(key);
+      continue;
+    }
+    // 原先有草稿且新草稿 id 已更新，代表重新生成已完成
+    if (info.draftId && msg.draft && msg.draft.id !== info.draftId) {
+      generatingMessages.delete(key);
+      continue;
+    }
+  }
+}
+// 生成中的按钮：禁用并标记 busy；不画转圈，沿用面板的 aria-busy 呼吸效果
+function busyButton(label, cls) {
+  const node = el('button', label, cls ? cls + ' loading' : 'loading');
+  node.disabled = true;
+  node.setAttribute('aria-busy', 'true');
   return node;
 }
 function clean(text) {
   return text
     .replace(/\[图片消息\]\(mediaId=[^)]*\)/g, '[图片消息，暂未识别]')
     .replace('注意：如需下载使用dws chat message download-media命令下载', '');
+}
+function isGroupSource(source) {
+  return source === 'ued' || source.startsWith('group-');
+}
+function groupNames(status) {
+  return status.group_names || { ued: status.group_name || '关注群' };
+}
+function sourceName(source) {
+  return { direct: '单聊', at: '@我' }[source] || groupNames(snapshot.status)[source] || source;
+}
+function renderGroups(groups) {
+  const root = document.getElementById('group-list');
+  root.replaceChildren();
+  if (!(groups || []).length) {
+    root.append(el('p', '暂无', 'meta-line'));
+    return;
+  }
+  for (const group of groups) {
+    const item = el('div', undefined, 'group-item');
+    item.append(el('div', group.name, 'group-name'), el('div', group.id, 'group-id'));
+    const actions = el('div', undefined, 'todo-action');
+    actions.append(
+      button('删除', async () => {
+        if (confirm('停止关注「' + group.name + '」？重启服务后生效。'))
+          await action('groups/remove', { id: group.id });
+      }),
+    );
+    item.append(actions);
+    root.append(item);
+  }
 }
 let pendingTodo = null;
 function openTodo(target) {
@@ -76,8 +183,11 @@ async function manualTodo(message) {
 function renderTodos(active) {
   const root = document.getElementById('todo-list');
   root.replaceChildren();
+  // 排除已忽略的待办项
   const todos = active.flatMap((message) =>
-    (message.todos || []).map((task) => ({ task, message })),
+    (message.todos || [])
+      .filter((task) => task.status !== 'ignored')
+      .map((task) => ({ task, message })),
   );
   document.getElementById('todo-count').textContent = todos.filter(
     (item) => item.task.status === 'candidate',
@@ -99,7 +209,10 @@ function renderTodos(active) {
     );
     if (task.status === 'candidate') {
       const actions = el('div', undefined, 'todo-action');
-      actions.append(button('添加', () => openTodo({ id: task.id, title: task.title }), 'primary'));
+      actions.append(
+        button('忽略', () => action('todo-ignore', { id: task.id })),
+        button('添加', () => openTodo({ id: task.id, title: task.title }), 'primary'),
+      );
       item.append(actions);
     } else item.append(el('div', todoStatuses[task.status] || task.status, 'todo-state'));
     root.append(item);
@@ -120,15 +233,7 @@ function messageCard(message) {
     who = el('div', undefined, 'who');
   seen.add(message.key);
   who.append(el('span', message.sender, 'name'));
-  for (const source of message.sources)
-    who.append(
-      el(
-        'span',
-        { direct: '单聊', at: '@我', ued: snapshot.status.group_name || '关注群' }[source] ||
-          source,
-        'tag',
-      ),
-    );
+  for (const source of message.sources) who.append(el('span', sourceName(source), 'tag'));
   if (message.ingest_mode === 'history_backfill') who.append(el('span', '历史补读', 'tag'));
   const time = el(
     'time',
@@ -150,9 +255,11 @@ function messageCard(message) {
     return card;
   }
   card.append(codex);
+  const isGenerating = generatingMessages.has(message.key);
   const actions = el('div', undefined, 'actions');
   if (draft) {
-    if (draft.status !== 'pending')
+    if (isGenerating) codex.append(el('div', '正在重新生成回复建议...', 'label state-generating'));
+    else if (draft.status !== 'pending')
       codex.append(
         el('div', statuses[draft.status] || draft.status, 'label state-' + draft.status),
       );
@@ -160,7 +267,13 @@ function messageCard(message) {
       const field = el('textarea');
       field.setAttribute('aria-label', '给' + message.sender + '的回复草稿');
       field.value = edits.has(draft.id) ? edits.get(draft.id) : draft.text;
-      field.placeholder = draft.text.trim() ? '写下你希望回复的内容' : '暂无回复建议，可手动填写';
+      field.placeholder = isGenerating
+        ? '正在重新生成草稿，请稍候...'
+        : draft.text.trim()
+          ? '写下你希望回复的内容'
+          : '暂无回复建议，可手动填写';
+      // 正在重新生成时禁用输入框
+      if (isGenerating) field.disabled = true;
       const send = button(
         '确认发送',
         async () => {
@@ -170,30 +283,51 @@ function messageCard(message) {
         },
         'primary',
       );
-      send.disabled = !field.value.trim();
+      send.disabled = isGenerating || !field.value.trim();
       field.oninput = () => {
         edits.set(draft.id, field.value);
-        send.disabled = !field.value.trim();
+        send.disabled = isGenerating || !field.value.trim();
       };
       codex.append(field);
       actions.append(send);
     }
     if (draft.status !== 'sending')
-      actions.append(button('重新生成', () => action('regenerate', { key: message.key })));
+      // 重新生成中禁用按钮以防止多次点击
+      actions.append(
+        isGenerating
+          ? busyButton('重新生成中...')
+          : button('重新生成', () => regenerateMessage(message)),
+      );
     if (draft.receipt)
       codex.append(el('div', draft.receipt.error || '请在钉钉核对投递结果。', 'receipt'));
   } else {
-    codex.append(el('div', '等待整理', 'label state-none'));
+    codex.append(
+      el(
+        'div',
+        isGenerating ? '正在生成草稿，请稍候...' : '等待整理',
+        isGenerating ? 'label state-generating' : 'label state-none',
+      ),
+    );
+    const manualBtn = button('手动回复', () => action('manual', { key: message.key }));
+    // 正在生成草稿时禁用对应操作按钮
+    if (isGenerating) manualBtn.disabled = true;
     actions.append(
-      button('手动回复', () => action('manual', { key: message.key })),
-      button('生成草稿', () => action('regenerate', { key: message.key }), 'primary'),
+      manualBtn,
+      isGenerating
+        ? busyButton('生成中...', 'primary')
+        : button('生成草稿', () => regenerateMessage(message), 'primary'),
     );
   }
-  if (!draft || draft.status !== 'sending')
-    actions.append(
-      button('添加待办', () => manualTodo(message)),
-      button('标记已处理', () => action('handled', { key: message.key })),
-    );
+  if (!draft || draft.status !== 'sending') {
+    const todoBtn = button('添加待办', () => manualTodo(message));
+    const handledBtn = button('标记已处理', () => action('handled', { key: message.key }));
+    // 正在重新生成时禁用待办与标记已处理按钮
+    if (isGenerating) {
+      todoBtn.disabled = true;
+      handledBtn.disabled = true;
+    }
+    actions.append(todoBtn, handledBtn);
+  }
   codex.append(actions);
   return card;
 }
@@ -207,7 +341,6 @@ function render() {
       item.state === 'stopped',
   );
   const expected = status.listener_count || 3;
-  document.querySelector('[data-filter=ued]').textContent = status.group_name || '关注群';
   const ready = Object.values(status.listeners || {}).filter(
     (item) => item.state === 'ready',
   ).length;
@@ -230,7 +363,7 @@ function render() {
     ...[
       ['单聊', counts.direct],
       ['@我', counts.at],
-      [status.group_name || '关注群', counts.ued],
+      ...Object.entries(groupNames(status)).map(([source, name]) => [name, counts[source]]),
     ].map(([key, value]) => {
       const row = el('div');
       row.append(el('dt', key), el('dd', (value || 0) + ' 条'));
@@ -238,6 +371,7 @@ function render() {
     }),
   );
   note.title = '历史补读不计入实时接收；订阅就绪不代表已验证群事件投递。';
+  document.getElementById('agent-label').textContent = status.ai_provider || 'AI 助手';
   document.getElementById('agent').textContent =
     status.summary_state === 'generating'
       ? '生成中'
@@ -270,10 +404,14 @@ function render() {
         })
       : '');
   renderTodos(active);
+  renderGroups(snapshot.groups);
   const root = document.getElementById('messages');
   root.replaceChildren();
   const visible = snapshot.messages.filter(
-    (message) => filter === 'all' || message.sources.includes(filter),
+    (message) =>
+      filter === 'all' ||
+      message.sources.includes(filter) ||
+      (filter === 'groups' && message.sources.some(isGroupSource)),
   );
   const pending = visible.filter((message) => !message.handled);
   for (const message of pending) root.append(messageCard(message));
@@ -315,9 +453,14 @@ async function refresh() {
       next.status.error,
       next.status.appserver,
       next.status.listeners,
+      next.groups,
     ]);
+    const prevCount = generatingMessages.size;
+    checkGeneratingStatus(next);
+    const generatingChanged = prevCount !== generatingMessages.size;
     snapshot = next;
-    if (signature !== last) {
+    // 数据签名变动或重新生成状态完成时触发视图重绘
+    if (signature !== last || generatingChanged) {
       const active = document.activeElement;
       if (active && active.tagName === 'TEXTAREA') return;
       last = signature;
@@ -325,6 +468,9 @@ async function refresh() {
     } else updated(next.status);
   } catch (e) {
     error(e.message);
+    // 服务连接失败时同步将监听状态置为异常
+    document.getElementById('listening').textContent = '连接异常';
+    document.getElementById('status').dataset.state = 'degraded';
   } finally {
     loading = false;
   }
@@ -340,12 +486,14 @@ document.getElementById('tabs').onclick = (event) => {
 };
 document.getElementById('refresh-overview').onclick = async (event) => {
   const node = event.currentTarget;
+  node.disabled = true;
   node.setAttribute('aria-busy', 'true');
   try {
     await action('overview', {});
   } catch (e) {
     error(e.message);
   } finally {
+    node.disabled = false;
     node.removeAttribute('aria-busy');
   }
 };
@@ -353,6 +501,111 @@ document.getElementById('todo-cancel').onclick = () => {
   pendingTodo = null;
   document.getElementById('todo-dialog').close();
 };
+document.getElementById('add-group').onclick = () => {
+  document.getElementById('group-form').reset();
+  selectedGroups.clear();
+  renderSelectedGroups();
+  closeGroupOptions();
+  document.getElementById('group-dialog-error').textContent = '';
+  document.getElementById('group-dialog').showModal();
+  loadAvailableGroups();
+};
+document.getElementById('group-cancel').onclick = () =>
+  document.getElementById('group-dialog').close();
+document.getElementById('group-form').onsubmit = async (event) => {
+  event.preventDefault();
+  try {
+    if (!selectedGroups.size) throw Error('请至少选择一个群');
+    for (const group of selectedGroups.values()) {
+      await action('groups', { id: group.id, name: group.name });
+    }
+    document.getElementById('group-dialog').close();
+  } catch (e) {
+    document.getElementById('group-dialog-error').textContent = e.message;
+  }
+};
+let availableGroups = [];
+const selectedGroups = new Map();
+
+function closeGroupOptions() {
+  const input = document.getElementById('group-search');
+  document.getElementById('group-options').hidden = true;
+  input.setAttribute('aria-expanded', 'false');
+}
+
+function renderSelectedGroups() {
+  const selection = document.getElementById('group-selection');
+  selection.replaceChildren();
+  for (const group of selectedGroups.values()) {
+    const tag = el('span', undefined, 'group-selection-tag');
+    const remove = el('button', '×', 'group-selection-remove');
+    remove.type = 'button';
+    remove.setAttribute('aria-label', '移除 ' + group.name);
+    remove.onclick = (event) => {
+      event.stopPropagation();
+      selectedGroups.delete(group.id);
+      renderSelectedGroups();
+      renderAvailableGroups(document.getElementById('group-search').value);
+    };
+    tag.append(document.createTextNode(group.name), remove);
+    selection.append(tag);
+  }
+}
+
+function toggleGroup(group) {
+  if (selectedGroups.has(group.id)) selectedGroups.delete(group.id);
+  else selectedGroups.set(group.id, group);
+  renderSelectedGroups();
+  document.getElementById('group-dialog-error').textContent = '';
+  renderAvailableGroups(document.getElementById('group-search').value);
+}
+
+function renderAvailableGroups(query = '') {
+  const options = document.getElementById('group-options');
+  const input = document.getElementById('group-search');
+  const normalizedQuery = query.trim().toLowerCase();
+  const groups = availableGroups.filter((item) =>
+    item.name.toLowerCase().includes(normalizedQuery),
+  );
+  options.replaceChildren();
+  for (const group of groups) {
+    const option = el('li', group.name, 'group-option');
+    option.setAttribute('role', 'option');
+    option.setAttribute('aria-selected', String(selectedGroups.has(group.id)));
+    option.onclick = (event) => {
+      event.stopPropagation();
+      toggleGroup(group);
+    };
+    options.append(option);
+  }
+  if (!groups.length) options.append(el('li', '没有匹配的群', 'group-option-empty'));
+  options.hidden = false;
+  input.setAttribute('aria-expanded', 'true');
+}
+async function loadAvailableGroups() {
+  try {
+    const response = await fetch('/api/groups/available', { cache: 'no-store' });
+    const value = await response.json();
+    if (!response.ok) throw Error(value.error || '无法读取群列表');
+    availableGroups = value.groups || [];
+    renderAvailableGroups(document.getElementById('group-search').value);
+  } catch (e) {
+    document.getElementById('group-dialog-error').textContent = e.message;
+  }
+}
+document.getElementById('group-search').oninput = (event) => {
+  renderAvailableGroups(event.target.value);
+};
+document.getElementById('group-search').onfocus = (event) =>
+  renderAvailableGroups(event.target.value);
+document.getElementById('group-search').onclick = (event) =>
+  renderAvailableGroups(event.target.value);
+document.getElementById('group-search').onkeydown = (event) => {
+  if (event.key === 'Escape') closeGroupOptions();
+};
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('.group-combobox')) closeGroupOptions();
+});
 document.getElementById('todo-form').onsubmit = async (event) => {
   event.preventDefault();
   const target = pendingTodo,
